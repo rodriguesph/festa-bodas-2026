@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bodas de Ouro - Jonas e Cleide</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        /* Estilo Base - Preto e Dourado */
+        body { 
+            font-family: 'Playfair Display', serif; /* Fonte do corpo do texto */
+            background-color: #0a0a0a; 
+            color: #D4AF37; 
+            margin: 0; 
+            padding: 20px; 
+            text-align: center; 
+        }
+        
+        /* Título com a fonte manuscrita */
+        h1 { 
+            font-family: 'Great Vibes', cursive;
+            font-size: 4rem; /* Bem grande */
+            margin-bottom: 0px; 
+            font-weight: normal; 
+            color: #BF953F;
+            text-shadow: 0 0 10px rgba(191, 149, 63, 0.3);
+        }
+
+        h3 {
+            margin-top: -10px;
+            font-weight: normal; 
+            color: #fff;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #D4AF37;
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        p.subtitle {
+            font-style: italic;
+            color: #888;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        
+        /* Botão Elegante */
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-block; margin-bottom: 40px; }
+        .btn { 
+            border: 1px solid #D4AF37; 
+            color: #000; 
+            background: linear-gradient(45deg, #BF953F, #FBF5B7, #AA771C);
+            padding: 15px 50px; 
+            border-radius: 2px; 
+            font-size: 20px; 
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 1px;
+            cursor: pointer; 
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+        }
+        .upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        
+        #loading { display: none; color: #FBF5B7; font-style: italic; margin-top: 15px; font-size: 1.2rem;}
+
+        /* Grid */
+        .feed { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 20px; 
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Polaroid Styling */
+        .polaroid { 
+            background: #fff; 
+            padding: 10px 10px 10px 10px; /* Borda branca simples */
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8); 
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .polaroid:hover { transform: scale(1.02); z-index: 5; box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+        .polaroid img { width: 100%; height: auto; display: block; }
+
+        /* Modal (Zoom) */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.95); 
+            justify-content: center; 
+            align-items: center;
+            flex-direction: column;
+        }
+        .modal img { max-width: 90%; max-height: 80vh; border: 15px solid white; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .close-txt { color: #D4AF37; margin-top: 20px; cursor: pointer; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <h1>Bodas de Ouro</h1>
+    <h3>Jonas e Cleide</h3>
+    
+    <p class="subtitle">
+        Faça parte deste capítulo da nossa história.<br>
+        Compartilhe sua perspectiva e nos ajude a eternizar esta noite.
+    </p>
+
+    <div class="upload-wrapper">
+        <button class="btn">POSTE SUA FOTO</button>
+        <input type="file" name="photo" id="photoInput" accept="image/*" capture="environment">
+        <div id="loading">Revelando fotografia... aguarde...</div>
+    </div>
+    
+    <div class="feed">
+        {% for photo in photos %}
+        <div class="polaroid" onclick="openModal('{{ photo.secure_url }}')">
+            <img src="{{ photo.secure_url|replace('/upload/', '/upload/w_500/') }}" alt="Memória">
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="modal" class="modal" onclick="closeModal()">
+        <img id="modalImg" src="">
+        <div class="close-txt">[ Clique para fechar ]</div>
+    </div>
+
+    <script>
+        const input = document.getElementById('photoInput');
+        const loading = document.getElementById('loading');
+
+        input.addEventListener('change', async (e) => {
+            if (e.target.files.length === 0) return;
+            loading.style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('photo', e.target.files[0]);
+
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                if (response.ok) window.location.reload();
+                else alert("Houve um problema ao salvar a memória. Tente novamente.");
+            } catch (error) {
+                alert("Erro de conexão.");
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function openModal(imgUrl) {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = imgUrl;
+            modal.style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
